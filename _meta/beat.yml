@@ -1,0 +1,7 @@
+################### Tuxbeat Configuration Example #########################
+
+############################# Tuxbeat ######################################
+
+tuxbeat:
+  # Defines how often an event is sent to the output
+  period: 1s

@@ -1,0 +1,9 @@
+/.idea
+/build
+
+.DS_Store
+/tuxbeat
+/tuxbeat.test
+*.pyc
+
+vendor

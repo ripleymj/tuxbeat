@@ -1,0 +1,5 @@
+= Tuxbeat Docs
+
+Welcome to the Tuxbeat documentation.
+
+
