@@ -7,8 +7,9 @@ import "time"
 
 type Config struct {
 	Period time.Duration `config:"period"`
+	Path   string        `config:"tuxconfig"`
 }
 
 var DefaultConfig = Config{
-	Period: 1 * time.Second,
+	Period: 10 * time.Second,
 }

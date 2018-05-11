@@ -1,7 +1,12 @@
 package beater
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/elastic/beats/libbeat/beat"
@@ -49,15 +54,83 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 		case <-ticker.C:
 		}
 
-		event := beat.Event{
-			Timestamp: time.Now(),
-			Fields: common.MapStr{
-				"type":    b.Info.Name,
-				"counter": counter,
-			},
+		env := os.Environ()
+		tuxConfig := "/home/psadm2/psft/pt/8.56/appserv/APPDOM/PSTUXCFG"
+		env = append(env, fmt.Sprintf("TUXCONFIG=%s", tuxConfig))
+
+		tuxCmd := exec.Command("tmadmin", "-r")
+		tuxCmd.Env = env
+
+		tuxIn, _ := tuxCmd.StdinPipe()
+		tuxOut, _ := tuxCmd.StdoutPipe()
+		oBuf := bufio.NewReader(tuxOut)
+
+		tuxCmd.Start()
+
+		tuxIn.Write([]byte("verbose on\n"))
+		tuxIn.Write([]byte("page off\n"))
+
+		tuxIn.Write([]byte("psr\n"))
+		tuxIn.Write([]byte("pq\n"))
+		tuxIn.Write([]byte("pclt\n"))
+		tuxIn.Write([]byte("quit\n"))
+
+		moreMessages := true
+
+	MessageRead:
+		for moreMessages {
+			event := beat.Event{
+				Timestamp: time.Now(),
+				Fields: common.MapStr{
+					"type":    b.Info.Name,
+					"counter": counter,
+				},
+			}
+
+                	event.Fields.Put("tuxconfig", tuxConfig)
+
+			message, _ := oBuf.ReadString('\n')
+			message = strings.TrimLeft(message, " >")
+
+			if strings.Index(message, "Group ID:") == 0 {
+				event.Fields.Put("msgtype", "printserver")
+			} else if strings.Index(message, "Prog Name:") == 0 {
+				event.Fields.Put("msgtype", "printqueue")
+			} else if strings.Index(message, "LMID:") == 0 {
+				event.Fields.Put("msgtype", "printclient")
+			}
+
+			appendLine := true
+			for appendLine {
+				line, err := oBuf.ReadString('\n')
+				line = strings.TrimLeft(line, " >")
+				if err != nil {
+					if err != io.EOF {
+						logp.Info("Error: %s\n", err)
+					}
+					moreMessages = false
+					break MessageRead
+				}
+
+				if line == "\n" {
+					appendLine = false
+				} else {
+					parts := strings.SplitN(line, ":", 2)
+					if len(parts) == 2 {
+						event.Fields.Put(parts[0], parts[1])
+					//message += line
+					}
+				}
+			}
+			//fmt.Print(message)
+			//fmt.Println("----")
+			bt.client.Publish(event)
+			logp.Info("Event sent")
+
 		}
-		bt.client.Publish(event)
-		logp.Info("Event sent")
+		tuxIn.Close()
+		tuxCmd.Wait()
+
 		counter++
 	}
 }
