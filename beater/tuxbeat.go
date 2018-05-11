@@ -81,13 +81,13 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			event := beat.Event{
 				Timestamp: time.Now(),
 				Fields: common.MapStr{
-					"type":    b.Info.Name,
+					"type": b.Info.Name,
 				},
 			}
 
-                	event.Fields.Put("tuxconfig", tuxConfig)
+			event.Fields.Put("tuxconfig", tuxConfig)
 
-			message, _ := oBuf.ReadString('\n')
+			message, msgErr := oBuf.ReadString('\n')
 			message = strings.TrimLeft(message, " >")
 
 			if strings.Index(message, "Group ID:") == 0 {
@@ -96,6 +96,15 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 				event.Fields.Put("msgtype", "printqueue")
 			} else if strings.Index(message, "LMID:") == 0 {
 				event.Fields.Put("msgtype", "printclient")
+			} else {
+				if msgErr == io.EOF {
+					moreMessages = false
+					break MessageRead
+					logp.Info("EOF")
+				} else {
+					continue MessageRead
+					logp.Info("Continuing")
+				}
 			}
 
 			appendLine := true
@@ -116,13 +125,11 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 					parts := strings.SplitN(line, ":", 2)
 					if len(parts) == 2 {
 						event.Fields.Put(parts[0], parts[1])
-					//message += line
+						//message += line
 					}
 				}
 			}
 			bt.client.Publish(event)
-			logp.Info("Event sent")
-
 		}
 		tuxIn.Close()
 		tuxCmd.Wait()
