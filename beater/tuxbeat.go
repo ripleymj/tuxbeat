@@ -74,10 +74,8 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 		tuxIn.Write([]byte("pclt\n"))
 		tuxIn.Write([]byte("quit\n"))
 
-		moreMessages := true
-
 	MessageRead:
-		for moreMessages {
+		for {
 			event := beat.Event{
 				Timestamp: time.Now(),
 				Fields: common.MapStr{
@@ -98,7 +96,6 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 				event.Fields.Put("msgtype", "printclient")
 			} else {
 				if msgErr == io.EOF {
-					moreMessages = false
 					break MessageRead
 					logp.Info("EOF")
 				} else {
@@ -107,25 +104,23 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 				}
 			}
 
-			appendLine := true
-			for appendLine {
+		AppendLine:
+			for {
 				line, err := oBuf.ReadString('\n')
 				line = strings.TrimLeft(line, " >")
 				if err != nil {
 					if err != io.EOF {
 						logp.Info("Error: %s\n", err)
 					}
-					moreMessages = false
 					break MessageRead
 				}
 
 				if line == "\n" {
-					appendLine = false
+					break AppendLine
 				} else {
 					parts := strings.SplitN(line, ":", 2)
 					if len(parts) == 2 {
 						event.Fields.Put(parts[0], parts[1])
-						//message += line
 					}
 				}
 			}
