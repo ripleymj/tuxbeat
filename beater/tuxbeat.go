@@ -46,7 +46,6 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 	}
 
 	ticker := time.NewTicker(bt.config.Period)
-	counter := 1
 	for {
 		select {
 		case <-bt.done:
@@ -83,7 +82,6 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 				Timestamp: time.Now(),
 				Fields: common.MapStr{
 					"type":    b.Info.Name,
-					"counter": counter,
 				},
 			}
 
@@ -122,16 +120,12 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 					}
 				}
 			}
-			//fmt.Print(message)
-			//fmt.Println("----")
 			bt.client.Publish(event)
 			logp.Info("Event sent")
 
 		}
 		tuxIn.Close()
 		tuxCmd.Wait()
-
-		counter++
 	}
 }
 
