@@ -74,55 +74,49 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 		tuxIn.Write([]byte("pclt\n"))
 		tuxIn.Write([]byte("quit\n"))
 
-	MessageRead:
+	tmadminRead:
 		for {
+			message := ""
 			event := beat.Event{
 				Timestamp: time.Now(),
 				Fields: common.MapStr{
 					"type": b.Info.Name,
 				},
 			}
+		MessageRead:
+			for {
 
-			event.Fields.Put("tuxconfig", tuxConfig)
+				line, err := oBuf.ReadString('\n')
+				line = strings.TrimLeft(line, " >")
 
-			message, msgErr := oBuf.ReadString('\n')
-			message = strings.TrimLeft(message, " >")
+				if err != nil {
+					if err != io.EOF {
+						fmt.Printf("Error: %s\n", err)
+					}
+					break tmadminRead
+				} else if line == "\n" {
+					break MessageRead
+				}
+				message += line
+			}
 
+			msgMap := make(map[string]string)
 			if strings.Index(message, "Group ID:") == 0 {
 				event.Fields.Put("msgtype", "printserver")
+				msgMap = HandleServerMsg(message)
 			} else if strings.Index(message, "Prog Name:") == 0 {
 				event.Fields.Put("msgtype", "printqueue")
 			} else if strings.Index(message, "LMID:") == 0 {
 				event.Fields.Put("msgtype", "printclient")
 			} else {
-				if msgErr == io.EOF {
-					break MessageRead
-					logp.Info("EOF")
-				} else {
-					continue MessageRead
-					logp.Info("Continuing")
-				}
+				continue tmadminRead
 			}
 
-		AppendLine:
-			for {
-				line, err := oBuf.ReadString('\n')
-				line = strings.TrimLeft(line, " >")
-				if err != nil {
-					if err != io.EOF {
-						logp.Info("Error: %s\n", err)
-					}
-					break MessageRead
-				}
+			event.Fields.Put("tuxconfig", tuxConfig)
+			event.Fields.Put("message", message)
 
-				if line == "\n" {
-					break AppendLine
-				} else {
-					parts := strings.SplitN(line, ":", 2)
-					if len(parts) == 2 {
-						event.Fields.Put(parts[0], parts[1])
-					}
-				}
+			for key, value := range msgMap {
+				event.Fields.Put(key, value)
 			}
 			bt.client.Publish(event)
 		}
@@ -134,4 +128,17 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 func (bt *Tuxbeat) Stop() {
 	bt.client.Close()
 	close(bt.done)
+}
+
+func HandleServerMsg(message string) map[string]string {
+	msgMap := make(map[string]string)
+	for _, line := range strings.Split(message, "\n") {
+		parts := strings.SplitN(line, ":", 2)
+		if len(parts) == 2 {
+			parts[0] = strings.Trim(parts[0], " ")
+			parts[1] = strings.Trim(parts[1], " ")
+			msgMap[parts[0]] = parts[1]
+		}
+	}
+	return msgMap
 }
