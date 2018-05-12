@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +22,8 @@ type Tuxbeat struct {
 	config config.Config
 	client beat.Client
 }
+
+var pidWorkStats map[string]int
 
 // Creates beater
 func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
@@ -44,6 +47,8 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 	if err != nil {
 		return err
 	}
+
+	pidWorkStats = make(map[string]int)
 
 	ticker := time.NewTicker(bt.config.Period)
 	for {
@@ -132,13 +137,32 @@ func (bt *Tuxbeat) Stop() {
 
 func HandleServerMsg(message string) map[string]string {
 	msgMap := make(map[string]string)
+	var pid string
+	var req int
 	for _, line := range strings.Split(message, "\n") {
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) == 2 {
 			parts[0] = strings.Trim(parts[0], " ")
 			parts[1] = strings.Trim(parts[1], " ")
 			msgMap[parts[0]] = parts[1]
+			if(parts[0] == "Process ID") {
+				pid = strings.SplitN(parts[1], " ", 2)[0]
+			} else if (parts[0] == "Requests done") {
+				req,_ = strconv.Atoi(parts[1])
+			}
 		}
 	}
+
+	var reqDone int
+	_,ok := pidWorkStats[pid]
+	if(ok) {
+		reqDone = req - pidWorkStats[pid]
+		pidWorkStats[pid] = req
+	} else {
+		reqDone = 0
+		pidWorkStats[pid] = req
+	}
+	msgMap["reqDone"] = strconv.Itoa(reqDone)
+
 	return msgMap
 }
