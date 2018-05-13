@@ -145,17 +145,17 @@ func HandleServerMsg(message string) map[string]string {
 			parts[0] = strings.Trim(parts[0], " ")
 			parts[1] = strings.Trim(parts[1], " ")
 			msgMap[parts[0]] = parts[1]
-			if(parts[0] == "Process ID") {
+			if parts[0] == "Process ID" {
 				pid = strings.SplitN(parts[1], " ", 2)[0]
-			} else if (parts[0] == "Requests done") {
-				req,_ = strconv.Atoi(parts[1])
+			} else if parts[0] == "Requests done" {
+				req, _ = strconv.Atoi(parts[1])
 			}
 		}
 	}
 
 	var reqDone int
-	_,ok := pidWorkStats[pid]
-	if(ok) {
+	_, ok := pidWorkStats[pid]
+	if ok {
 		reqDone = req - pidWorkStats[pid]
 		pidWorkStats[pid] = req
 	} else {
