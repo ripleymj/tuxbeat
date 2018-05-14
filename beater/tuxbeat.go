@@ -108,7 +108,7 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			msgMap := make(map[string]string)
 			if strings.Index(message, "Group ID:") == 0 {
 				event.Fields.Put("msgtype", "printserver")
-				msgMap = HandleServerMsg(message)
+				msgMap = HandleServerMsg(message, (int)(bt.config.Period.Seconds()))
 			} else if strings.Index(message, "Prog Name:") == 0 {
 				event.Fields.Put("msgtype", "printqueue")
 			} else if strings.Index(message, "LMID:") == 0 {
@@ -135,7 +135,7 @@ func (bt *Tuxbeat) Stop() {
 	close(bt.done)
 }
 
-func HandleServerMsg(message string) map[string]string {
+func HandleServerMsg(message string, period int) map[string]string {
 	msgMap := make(map[string]string)
 	var pid string
 	var req int
@@ -162,7 +162,7 @@ func HandleServerMsg(message string) map[string]string {
 		reqDone = 0
 		pidWorkStats[pid] = req
 	}
-	msgMap["reqDone"] = strconv.Itoa(reqDone)
+	msgMap["reqPerSec"] = strconv.Itoa(reqDone/period)
 
 	return msgMap
 }
