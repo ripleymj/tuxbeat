@@ -7,7 +7,7 @@ import "time"
 
 type Config struct {
 	Period time.Duration `config:"period"`
-	Path   string        `config:"tuxconfig"`
+	Path   []string        `config:"domains" validate:"required"`
 }
 
 var DefaultConfig = Config{
