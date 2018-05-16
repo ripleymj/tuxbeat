@@ -59,7 +59,6 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 		}
 
 		for _, domain := range bt.config.Domains {
-			fmt.Printf("Current domain: %s\n", domain)
 			env := os.Environ()
 			env = append(env, fmt.Sprintf("TUXCONFIG=%s", domain))
 
@@ -75,9 +74,15 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			tuxIn.Write([]byte("verbose on\n"))
 			tuxIn.Write([]byte("page off\n"))
 
-			tuxIn.Write([]byte("psr\n"))
-			tuxIn.Write([]byte("pq\n"))
-			tuxIn.Write([]byte("pclt\n"))
+			if bt.config.PrintServer {
+				tuxIn.Write([]byte("psr\n"))
+			}
+			if bt.config.PrintQueue {
+				tuxIn.Write([]byte("pq\n"))
+			}
+			if bt.config.PrintClient {
+				tuxIn.Write([]byte("pclt\n"))
+			}
 			tuxIn.Write([]byte("quit\n"))
 
 		tmadminRead:

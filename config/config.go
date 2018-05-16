@@ -8,14 +8,14 @@ import "time"
 type Config struct {
 	Period      time.Duration `config:"period"`
 	Domains     []string      `config:"domains" validate:"required"`
-	printserver bool          `config:"printserver"`
-	printclient bool          `config:"printclient"`
-	printqueue  bool          `config:"printqueue"`
+	PrintServer bool          `config:"printserver"`
+	PrintClient bool          `config:"printclient"`
+	PrintQueue  bool          `config:"printqueue"`
 }
 
 var DefaultConfig = Config{
 	Period:      10 * time.Second,
-	printserver: true,
-	printclient: true,
-	printqueue:  true,
+	PrintServer: true,
+	PrintClient: true,
+	PrintQueue:  true,
 }
