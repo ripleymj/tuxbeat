@@ -6,10 +6,16 @@ package config
 import "time"
 
 type Config struct {
-	Period time.Duration `config:"period"`
-	Path   []string        `config:"domains" validate:"required"`
+	Period      time.Duration `config:"period"`
+	Domains     []string      `config:"domains" validate:"required"`
+	printserver bool          `config:"printserver"`
+	printclient bool          `config:"printclient"`
+	printqueue  bool          `config:"printqueue"`
 }
 
 var DefaultConfig = Config{
-	Period: 10 * time.Second,
+	Period:      10 * time.Second,
+	printserver: true,
+	printclient: true,
+	printqueue:  true,
 }

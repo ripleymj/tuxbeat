@@ -58,75 +58,77 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 		case <-ticker.C:
 		}
 
-		env := os.Environ()
-		tuxConfig := "/home/psadm2/psft/pt/8.56/appserv/APPDOM/PSTUXCFG"
-		env = append(env, fmt.Sprintf("TUXCONFIG=%s", tuxConfig))
+		for _, domain := range bt.config.Domains {
+			fmt.Printf("Current domain: %s\n", domain)
+			env := os.Environ()
+			env = append(env, fmt.Sprintf("TUXCONFIG=%s", domain))
 
-		tuxCmd := exec.Command("tmadmin", "-r")
-		tuxCmd.Env = env
+			tuxCmd := exec.Command("tmadmin", "-r")
+			tuxCmd.Env = env
 
-		tuxIn, _ := tuxCmd.StdinPipe()
-		tuxOut, _ := tuxCmd.StdoutPipe()
-		oBuf := bufio.NewReader(tuxOut)
+			tuxIn, _ := tuxCmd.StdinPipe()
+			tuxOut, _ := tuxCmd.StdoutPipe()
+			oBuf := bufio.NewReader(tuxOut)
 
-		tuxCmd.Start()
+			tuxCmd.Start()
 
-		tuxIn.Write([]byte("verbose on\n"))
-		tuxIn.Write([]byte("page off\n"))
+			tuxIn.Write([]byte("verbose on\n"))
+			tuxIn.Write([]byte("page off\n"))
 
-		tuxIn.Write([]byte("psr\n"))
-		tuxIn.Write([]byte("pq\n"))
-		tuxIn.Write([]byte("pclt\n"))
-		tuxIn.Write([]byte("quit\n"))
+			tuxIn.Write([]byte("psr\n"))
+			tuxIn.Write([]byte("pq\n"))
+			tuxIn.Write([]byte("pclt\n"))
+			tuxIn.Write([]byte("quit\n"))
 
-	tmadminRead:
-		for {
-			message := ""
-			event := beat.Event{
-				Timestamp: time.Now(),
-				Fields: common.MapStr{
-					"type": b.Info.Name,
-				},
-			}
-		MessageRead:
+		tmadminRead:
 			for {
-
-				line, err := oBuf.ReadString('\n')
-				line = strings.TrimLeft(line, " >")
-
-				if err != nil {
-					if err != io.EOF {
-						fmt.Printf("Error: %s\n", err)
-					}
-					break tmadminRead
-				} else if line == "\n" {
-					break MessageRead
+				message := ""
+				event := beat.Event{
+					Timestamp: time.Now(),
+					Fields: common.MapStr{
+						"type": b.Info.Name,
+					},
 				}
-				message += line
-			}
+			MessageRead:
+				for {
 
-			msgMap := make(map[string]string)
-			if strings.Index(message, "Group ID:") == 0 {
-				event.Fields.Put("msgtype", "printserver")
-				msgMap = HandleServerMsg(message, (int)(bt.config.Period.Seconds()))
-			} else if strings.Index(message, "Prog Name:") == 0 {
-				event.Fields.Put("msgtype", "printqueue")
-			} else if strings.Index(message, "LMID:") == 0 {
-				event.Fields.Put("msgtype", "printclient")
-			} else {
-				continue tmadminRead
-			}
+					line, err := oBuf.ReadString('\n')
+					line = strings.TrimLeft(line, " >")
 
-			event.Fields.Put("tuxconfig", tuxConfig)
-			event.Fields.Put("message", message)
+					if err != nil {
+						if err != io.EOF {
+							fmt.Printf("Error: %s\n", err)
+						}
+						break tmadminRead
+					} else if line == "\n" {
+						break MessageRead
+					}
+					message += line
+				}
 
-			for key, value := range msgMap {
-				event.Fields.Put(key, value)
+				msgMap := make(map[string]string)
+				if strings.Index(message, "Group ID:") == 0 {
+					event.Fields.Put("msgtype", "printserver")
+					msgMap = HandleServerMsg(message, (int)(bt.config.Period.Seconds()))
+				} else if strings.Index(message, "Prog Name:") == 0 {
+					event.Fields.Put("msgtype", "printqueue")
+				} else if strings.Index(message, "LMID:") == 0 {
+					event.Fields.Put("msgtype", "printclient")
+				} else {
+					continue tmadminRead
+				}
+
+				event.Fields.Put("tuxconfig", domain)
+				event.Fields.Put("message", message)
+
+				for key, value := range msgMap {
+					event.Fields.Put(key, value)
+				}
+				bt.client.Publish(event)
 			}
-			bt.client.Publish(event)
+			tuxIn.Close()
+			tuxCmd.Wait()
 		}
-		tuxIn.Close()
-		tuxCmd.Wait()
 	}
 }
 
@@ -162,7 +164,7 @@ func HandleServerMsg(message string, period int) map[string]string {
 		reqDone = 0
 		pidWorkStats[pid] = req
 	}
-	msgMap["reqPerSec"] = strconv.Itoa(reqDone/period)
+	msgMap["reqPerSec"] = strconv.Itoa(reqDone / period)
 
 	return msgMap
 }
