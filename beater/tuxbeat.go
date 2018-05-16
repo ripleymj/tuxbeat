@@ -160,16 +160,17 @@ func HandleServerMsg(message string, period int) map[string]string {
 		}
 	}
 
-	var reqDone int
+	var reqDone,reqPerSec float64
 	_, ok := pidWorkStats[pid]
 	if ok {
-		reqDone = req - pidWorkStats[pid]
+		reqDone = float64(req) - float64(pidWorkStats[pid])
 		pidWorkStats[pid] = req
 	} else {
 		reqDone = 0
 		pidWorkStats[pid] = req
 	}
-	msgMap["reqPerSec"] = strconv.Itoa(reqDone / period)
+	reqPerSec = reqDone / float64(period)
+	msgMap["reqPerSec"] = strconv.FormatFloat(reqPerSec, 'f', 2, 32)
 
 	return msgMap
 }
