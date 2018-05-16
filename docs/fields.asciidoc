@@ -401,15 +401,10 @@ Kubernetes container image
 None
 
 
-*`counter`*::
+*`reqPerSec`*::
 +
 --
-type: long
-
-required: True
-
-PLEASE UPDATE DOCUMENTATION
-
+type: scaled_float
 
 --
 
