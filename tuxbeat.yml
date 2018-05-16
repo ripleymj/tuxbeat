@@ -4,7 +4,12 @@
 
 tuxbeat:
   # Defines how often an event is sent to the output
-  period: 1s
+  period: 10s
+  domains:
+    - /home/psadm2/psft/pt/8.56/appserv/APPDOM/PSTUXCFG
+  printserver: yes
+  printclient: yes
+  printqueue:  yes
 
 #================================ General =====================================
 
