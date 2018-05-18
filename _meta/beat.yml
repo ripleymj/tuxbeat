@@ -4,6 +4,9 @@
 
 name: tuxbeat
 tuxbeat:
+  # Override tmadmin PATH
+  # tmadmin: /opt/peoplesoft/pt/bea/tuxedo/tuxedo12.2.2.0.0/bin/tmadmin
+
   # Defines how often an event is sent to the output
   period: 10s
   domains:
