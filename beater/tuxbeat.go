@@ -62,7 +62,7 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			env := os.Environ()
 			env = append(env, fmt.Sprintf("TUXCONFIG=%s", domain))
 
-			tuxCmd := exec.Command("tmadmin", "-r")
+			tuxCmd := exec.Command(bt.config.TMAdmin, "-r")
 			tuxCmd.Env = env
 
 			tuxIn, _ := tuxCmd.StdinPipe()
@@ -160,7 +160,7 @@ func HandleServerMsg(message string, period int) map[string]string {
 		}
 	}
 
-	var reqDone,reqPerSec float64
+	var reqDone, reqPerSec float64
 	_, ok := pidWorkStats[pid]
 	if ok {
 		reqDone = float64(req) - float64(pidWorkStats[pid])
