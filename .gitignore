@@ -7,3 +7,7 @@
 *.pyc
 
 vendor
+
+###
+/tuxbeat.yml
+/tuxbeat.reference.yml
