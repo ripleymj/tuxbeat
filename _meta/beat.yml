@@ -14,3 +14,6 @@ tuxbeat:
   printserver: yes
   printclient: yes
   printqueue:  yes
+
+# Default seccomp policy blocks process execution, which tuxbeat needs
+seccomp.enabled: false
