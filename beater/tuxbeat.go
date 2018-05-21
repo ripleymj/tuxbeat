@@ -105,7 +105,7 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 							fmt.Printf("Error: %s\n", err)
 						}
 						break tmadminRead
-					} else if line == "\n" {
+					} else if (line == "\n" || line == "\r\n") {
 						break MessageRead
 					}
 					message += line
@@ -149,8 +149,8 @@ func HandleServerMsg(message string, period int) map[string]string {
 	for _, line := range strings.Split(message, "\n") {
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) == 2 {
-			parts[0] = strings.Trim(parts[0], " ")
-			parts[1] = strings.Trim(parts[1], " ")
+			parts[0] = strings.Trim(parts[0], " \r")
+			parts[1] = strings.Trim(parts[1], " \r")
 			msgMap[parts[0]] = parts[1]
 			if parts[0] == "Process ID" {
 				pid = strings.SplitN(parts[1], " ", 2)[0]
