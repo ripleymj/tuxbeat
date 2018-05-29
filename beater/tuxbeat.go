@@ -3,7 +3,6 @@ package beater
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strconv"
@@ -67,7 +66,8 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 
 			tuxIn, _ := tuxCmd.StdinPipe()
 			tuxOut, _ := tuxCmd.StdoutPipe()
-			oBuf := bufio.NewReader(tuxOut)
+			scanner := bufio.NewScanner(tuxOut)
+			scanner.Split(bufio.ScanLines)
 
 			tuxCmd.Start()
 
@@ -85,52 +85,23 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			}
 			tuxIn.Write([]byte("quit\n"))
 
-		tmadminRead:
-			for {
-				message := ""
-				event := beat.Event{
-					Timestamp: time.Now(),
-					Fields: common.MapStr{
-						"type": b.Info.Name,
-					},
-				}
-			MessageRead:
-				for {
-
-					line, err := oBuf.ReadString('\n')
-					line = strings.TrimLeft(line, " >")
-
-					if err != nil {
-						if err != io.EOF {
-							fmt.Printf("Error: %s\n", err)
-						}
-						break tmadminRead
-					} else if (line == "\n" || line == "\r\n") {
-						break MessageRead
-					}
-					message += line
-				}
-
-				msgMap := make(map[string]string)
-				if strings.Index(message, "Group ID:") == 0 {
-					event.Fields.Put("msgtype", "printserver")
-					msgMap = HandleServerMsg(message, (int)(bt.config.Period.Seconds()))
-				} else if strings.Index(message, "Prog Name:") == 0 {
-					event.Fields.Put("msgtype", "printqueue")
-				} else if strings.Index(message, "LMID:") == 0 {
-					event.Fields.Put("msgtype", "printclient")
+			message := ""
+			for scanner.Scan() {
+				temp := scanner.Text()
+				//				fmt.Printf("Temp: %s\n", temp)
+				line := strings.TrimLeft(temp, " >")
+				//				fmt.Printf("Line: %s\n", line)
+				//				fmt.Printf("Message: %s\n", message)
+				if len(line) == 0 {
+					HandleMsg(message, bt, domain)
+					message = ""
 				} else {
-					continue tmadminRead
+					message += line + "\n"
 				}
-
-				event.Fields.Put("tuxconfig", domain)
-				event.Fields.Put("message", message)
-
-				for key, value := range msgMap {
-					event.Fields.Put(key, value)
-				}
-				bt.client.Publish(event)
 			}
+
+			HandleMsg(message, bt, domain)
+
 			tuxIn.Close()
 			tuxCmd.Wait()
 		}
@@ -142,23 +113,47 @@ func (bt *Tuxbeat) Stop() {
 	close(bt.done)
 }
 
-func HandleServerMsg(message string, period int) map[string]string {
+func HandleMsg(message string, bt *Tuxbeat, tuxconfig string) {
+	event := beat.Event{
+		Timestamp: time.Now(),
+		Fields: common.MapStr{
+			"type": "tuxbeat",
+		},
+	}
 	msgMap := make(map[string]string)
-	var pid string
-	var req int
 	for _, line := range strings.Split(message, "\n") {
 		parts := strings.SplitN(line, ":", 2)
 		if len(parts) == 2 {
 			parts[0] = strings.Trim(parts[0], " \r")
 			parts[1] = strings.Trim(parts[1], " \r")
 			msgMap[parts[0]] = parts[1]
-			if parts[0] == "Process ID" {
-				pid = strings.SplitN(parts[1], " ", 2)[0]
-			} else if parts[0] == "Requests done" {
-				req, _ = strconv.Atoi(parts[1])
-			}
 		}
 	}
+	if strings.Index(message, "Group ID:") == 0 {
+		event.Fields.Put("msgtype", "printserver")
+		HandleServerMsg(msgMap, (int)(bt.config.Period.Seconds()))
+	} else if strings.Index(message, "Prog Name:") == 0 {
+		event.Fields.Put("msgtype", "printqueue")
+	} else if strings.Index(message, "LMID:") == 0 {
+		event.Fields.Put("msgtype", "printclient")
+	} else {
+		return
+	}
+
+	logp.Debug("Message", message)
+
+	event.Fields.Put("tuxconfig", tuxconfig)
+	event.Fields.Put("message", message)
+
+	for key, value := range msgMap {
+		event.Fields.Put(key, value)
+	}
+	bt.client.Publish(event)
+}
+
+func HandleServerMsg(msgMap map[string]string, period int) {
+	pid := msgMap["Process ID"]
+	req, _ := strconv.Atoi(msgMap["Requests done"])
 
 	var reqDone, reqPerSec float64
 	_, ok := pidWorkStats[pid]
@@ -171,6 +166,4 @@ func HandleServerMsg(message string, period int) map[string]string {
 	}
 	reqPerSec = reqDone / float64(period)
 	msgMap["reqPerSec"] = strconv.FormatFloat(reqPerSec, 'f', 2, 32)
-
-	return msgMap
 }
