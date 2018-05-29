@@ -91,10 +91,7 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			message := ""
 			for scanner.Scan() {
 				temp := scanner.Text()
-				//				fmt.Printf("Temp: %s\n", temp)
 				line := strings.TrimLeft(temp, " >")
-				//				fmt.Printf("Line: %s\n", line)
-				//				fmt.Printf("Message: %s\n", message)
 				if len(line) == 0 {
 					HandleMsg(message, bt, domain)
 					message = ""
