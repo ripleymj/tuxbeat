@@ -6,12 +6,13 @@ package config
 import "time"
 
 type Config struct {
-	Period      time.Duration `config:"period"`
-	Domains     []string      `config:"domains" validate:"required"`
-	TMAdmin     string        `config:"tmadmin"`
-	PrintServer bool          `config:"printserver"`
-	PrintClient bool          `config:"printclient"`
-	PrintQueue  bool          `config:"printqueue"`
+	Period       time.Duration `config:"period"`
+	Domains      []string      `config:"domains" validate:"required"`
+	TMAdmin      string        `config:"tmadmin"`
+	PrintServer  bool          `config:"printserver"`
+	PrintService bool          `config:"printservice"`
+	PrintClient  bool          `config:"printclient"`
+	PrintQueue   bool          `config:"printqueue"`
 }
 
 var DefaultConfig = Config{

@@ -12,6 +12,7 @@ tuxbeat:
   domains:
     - /home/psadm2/psft/pt/8.56/appserv/APPDOM/PSTUXCFG
   printserver: yes
+  printservice: yes
   printclient: yes
   printqueue:  yes
 

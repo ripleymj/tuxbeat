@@ -77,6 +77,9 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 			if bt.config.PrintServer {
 				tuxIn.Write([]byte("psr\n"))
 			}
+			if bt.config.PrintService {
+				tuxIn.Write([]byte("psc\n"))
+			}
 			if bt.config.PrintQueue {
 				tuxIn.Write([]byte("pq\n"))
 			}
@@ -132,7 +135,9 @@ func HandleMsg(message string, bt *Tuxbeat, tuxconfig string) {
 	if strings.Index(message, "Group ID:") == 0 {
 		event.Fields.Put("msgtype", "printserver")
 		HandleServerMsg(msgMap, (int)(bt.config.Period.Seconds()))
-	} else if strings.Index(message, "Prog Name:") == 0 {
+	} else if strings.Index(message, "Service Name:") == 0 {
+                event.Fields.Put("msgtype", "printservice")
+        } else if strings.Index(message, "Prog Name:") == 0 {
 		event.Fields.Put("msgtype", "printqueue")
 	} else if strings.Index(message, "LMID:") == 0 {
 		event.Fields.Put("msgtype", "printclient")
