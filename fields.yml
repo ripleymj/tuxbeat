@@ -2,9 +2,41 @@
   title: tuxbeat
   description:
   fields:
-    - name: reqPerSec
-      type: scaled_float
-      scaling_factor: 100
+    - name: Print Service
+      type: group
+      fields:
+      - name: Service Name
+        type: keyword
+      - name: Service Type
+        type: keyword
+      - name: Routine Name
+        type: keyword
+      - name: Prog Name
+        type: keyword
+      - name: Queue Name
+        type: keyword
+      - name: Process ID
+        type: integer
+      - name: Machine ID
+        type: keyword
+      - name: Group ID
+        type: keyword
+      - name: Server ID
+        type: short
+      - name: Current Load
+        type: short
+      - name: Current Priority
+        type: short
+      - name: Current Trantime
+        type: short
+      - name: Current Blocktime
+        type: short
+      - name: Current BUFTYPECONV
+        type: short
+      - name: Requests Done
+        type: short
+      - name: Current status
+        type: keyword
 
 - key: beat
   title: Beat
@@ -66,6 +98,53 @@
           type: keyword
           description: >
             Error type.
+
+- key: alias
+  title: Alias
+  description: >
+    Alias fields for compatibility with 7.x.
+  fields:
+    # Common Beats fields
+    - name: host.hostname
+      type: alias
+      path: beat.hostname
+    - name: event.timezone
+      type: alias
+      path: beat.timezone
+
+    # Cloud processor fields
+    - name: cloud.provider
+      type: alias
+      path: meta.cloud.provider
+    - name: cloud.instance.id
+      type: alias
+      path: meta.cloud.instance_id
+    - name: cloud.instance.name
+      type: alias
+      path: meta.cloud.instance_name
+    - name: cloud.machine.type
+      type: alias
+      path: meta.cloud.machine_type
+    - name: cloud.availability_zone
+      type: alias
+      path: meta.cloud.availability_zone
+    - name: cloud.project.id
+      type: alias
+      path: meta.cloud.project_id
+    - name: cloud.region
+      type: alias
+      path: meta.cloud.region
+
+    # Docker processor fields
+    - name: container.id
+      type: alias
+      path: docker.container.id
+    - name: container.name
+      type: alias
+      path: docker.container.name
+    - name: container.image.name
+      type: alias
+      path: docker.container.image
 - key: cloud
   title: Cloud provider metadata
   description: >
@@ -151,10 +230,22 @@
           type: keyword
           description: >
             Host architecture (e.g. x86_64, arm, ppc, mips).
+        - name: containerized
+          type: boolean
+          description: >
+            If the host is a container.
         - name: os.platform
           type: keyword
           description: >
             OS platform (e.g. centos, ubuntu, windows).
+        - name: os.name
+          type: keyword
+          description: >
+            Operating system name (e.g. "Mac OS X").
+        - name: os.build
+          type: keyword
+          description: >
+            OS build information (e.g. "18D109").
         - name: os.version
           type: keyword
           description: >
@@ -171,7 +262,6 @@
           type: keyword
           description: >
             List of hardware-addresses, usually MAC-addresses.
-
 - key: kubernetes
   title: Kubernetes
   description: >

@@ -9,9 +9,10 @@ This file is generated! See _meta/fields.yml and scripts/generate_field_docs.py
 [partintro]
 
 --
-This document describes the fields that are exported by tuxbeat. They are
+This document describes the fields that are exported by Tuxbeat. They are
 grouped in the following categories:
 
+* <<exported-fields-alias>>
 * <<exported-fields-beat>>
 * <<exported-fields-cloud>>
 * <<exported-fields-docker-processor>>
@@ -20,6 +21,121 @@ grouped in the following categories:
 * <<exported-fields-tuxbeat>>
 
 --
+[[exported-fields-alias]]
+== Alias fields
+
+Alias fields for compatibility with 7.x.
+
+
+
+*`host.hostname`*::
++
+--
+type: alias
+
+alias to: beat.hostname
+
+--
+
+*`event.timezone`*::
++
+--
+type: alias
+
+alias to: beat.timezone
+
+--
+
+*`cloud.provider`*::
++
+--
+type: alias
+
+alias to: meta.cloud.provider
+
+--
+
+*`cloud.instance.id`*::
++
+--
+type: alias
+
+alias to: meta.cloud.instance_id
+
+--
+
+*`cloud.instance.name`*::
++
+--
+type: alias
+
+alias to: meta.cloud.instance_name
+
+--
+
+*`cloud.machine.type`*::
++
+--
+type: alias
+
+alias to: meta.cloud.machine_type
+
+--
+
+*`cloud.availability_zone`*::
++
+--
+type: alias
+
+alias to: meta.cloud.availability_zone
+
+--
+
+*`cloud.project.id`*::
++
+--
+type: alias
+
+alias to: meta.cloud.project_id
+
+--
+
+*`cloud.region`*::
++
+--
+type: alias
+
+alias to: meta.cloud.region
+
+--
+
+*`container.id`*::
++
+--
+type: alias
+
+alias to: docker.container.id
+
+--
+
+*`container.name`*::
++
+--
+type: alias
+
+alias to: docker.container.name
+
+--
+
+*`container.image.name`*::
++
+--
+type: alias
+
+alias to: docker.container.image
+
+--
+
 [[exported-fields-beat]]
 == Beat fields
 
@@ -287,12 +403,42 @@ Host architecture (e.g. x86_64, arm, ppc, mips).
 
 --
 
+*`host.containerized`*::
++
+--
+type: boolean
+
+If the host is a container.
+
+
+--
+
 *`host.os.platform`*::
 +
 --
 type: keyword
 
 OS platform (e.g. centos, ubuntu, windows).
+
+
+--
+
+*`host.os.name`*::
++
+--
+type: keyword
+
+Operating system name (e.g. "Mac OS X").
+
+
+--
+
+*`host.os.build`*::
++
+--
+type: keyword
+
+OS build information (e.g. "18D109").
 
 
 --
@@ -431,10 +577,116 @@ Kubernetes container image
 None
 
 
-*`reqPerSec`*::
+
+*`Print Service.Service Name`*::
 +
 --
-type: scaled_float
+type: keyword
+
+--
+
+*`Print Service.Service Type`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Routine Name`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Prog Name`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Queue Name`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Process ID`*::
++
+--
+type: integer
+
+--
+
+*`Print Service.Machine ID`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Group ID`*::
++
+--
+type: keyword
+
+--
+
+*`Print Service.Server ID`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current Load`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current Priority`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current Trantime`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current Blocktime`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current BUFTYPECONV`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Requests Done`*::
++
+--
+type: short
+
+--
+
+*`Print Service.Current status`*::
++
+--
+type: keyword
 
 --
 

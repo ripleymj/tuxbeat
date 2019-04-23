@@ -11,3 +11,4 @@ vendor
 ###
 /tuxbeat.yml
 /tuxbeat.reference.yml
+/_meta/kibana.generated

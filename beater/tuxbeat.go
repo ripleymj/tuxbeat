@@ -1,3 +1,20 @@
+// Licensed to Elasticsearch B.V. under one or more contributor
+// license agreements. See the NOTICE file distributed with
+// this work for additional information regarding copyright
+// ownership. Elasticsearch B.V. licenses this file to you under
+// the Apache License, Version 2.0 (the "License"); you may
+// not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
 package beater
 
 import (
@@ -5,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,8 +37,6 @@ type Tuxbeat struct {
 	config config.Config
 	client beat.Client
 }
-
-var pidWorkStats map[string]int
 
 // Creates beater
 func New(b *beat.Beat, cfg *common.Config) (beat.Beater, error) {
@@ -46,8 +60,6 @@ func (bt *Tuxbeat) Run(b *beat.Beat) error {
 	if err != nil {
 		return err
 	}
-
-	pidWorkStats = make(map[string]int)
 
 	ticker := time.NewTicker(bt.config.Period)
 	for {
@@ -120,6 +132,7 @@ func HandleMsg(message string, bt *Tuxbeat, tuxconfig string) {
 			"type": "tuxbeat",
 		},
 	}
+
 	msgMap := make(map[string]string)
 	for _, line := range strings.Split(message, "\n") {
 		parts := strings.SplitN(line, ":", 2)
@@ -131,10 +144,11 @@ func HandleMsg(message string, bt *Tuxbeat, tuxconfig string) {
 	}
 	if strings.Index(message, "Group ID:") == 0 {
 		event.Fields.Put("msgtype", "printserver")
-		HandleServerMsg(msgMap, (int)(bt.config.Period.Seconds()))
+		HandleServerMsg(msgMap)
 	} else if strings.Index(message, "Service Name:") == 0 {
-                event.Fields.Put("msgtype", "printservice")
-        } else if strings.Index(message, "Prog Name:") == 0 {
+		HandleServiceMsg(msgMap)
+		event.Fields.Put("msgtype", "printservice")
+	} else if strings.Index(message, "Prog Name:") == 0 {
 		event.Fields.Put("msgtype", "printqueue")
 	} else if strings.Index(message, "LMID:") == 0 {
 		event.Fields.Put("msgtype", "printclient")
@@ -153,19 +167,10 @@ func HandleMsg(message string, bt *Tuxbeat, tuxconfig string) {
 	bt.client.Publish(event)
 }
 
-func HandleServerMsg(msgMap map[string]string, period int) {
-	pid := msgMap["Process ID"]
-	req, _ := strconv.Atoi(msgMap["Requests done"])
+func HandleServerMsg(msgMap map[string]string) {
+	// Any specific server msg handling
+}
 
-	var reqDone, reqPerSec float64
-	_, ok := pidWorkStats[pid]
-	if ok {
-		reqDone = float64(req) - float64(pidWorkStats[pid])
-		pidWorkStats[pid] = req
-	} else {
-		reqDone = 0
-		pidWorkStats[pid] = req
-	}
-	reqPerSec = reqDone / float64(period)
-	msgMap["reqPerSec"] = strconv.FormatFloat(reqPerSec, 'f', 2, 32)
+func HandleServiceMsg(msgMap map[string]string) {
+	//	string procID := msgMap[
 }
